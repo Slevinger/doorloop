@@ -12,8 +12,9 @@ export default ({ difficulty = Difficulty.Easy }: { difficulty?: Difficulty }) =
 
     const wordsPerMinute = useMemo(() => {
         //@ts-ignore
-        const totalTime = Math.round((gameStopTime - gameStartTime) / 1000);
-        return isNaN(totalTime) ? 0 : statistics.correctWords / totalTime;
+        const totalTime = Math.round((gameStopTime - gameStartTime) / 1000) / 60;
+        const perMinute = isNaN(totalTime) ? 0 : statistics.correctWords / totalTime;
+        return Math.round(perMinute * 100) / 100
     }, [statistics, gameStartTime, gameStopTime])
 
     console.log(wordsPerMinute)
