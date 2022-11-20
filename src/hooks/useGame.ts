@@ -3,7 +3,7 @@ import { Difficulty } from "../types";
 import useTimeInterval from "./useTimeInterval";
 
 const words: string[] = ["account", "act", "addition", "adjustment", "advertisement", "agreement", "air", "amount", "amusement", "animal", "answer", "apparatus", "approval", "argument", "art", "attack", "attempt", "attention", "attraction", "authority", "back", "balance", "base", "behavior", "belief", "birth", "bit", "bite", "blood", "blow", "body", "brass", "bread", "breath", "brother", "building", "burn", "burst", "business", "butter", "canvas", "care", "cause", "chalk", "chance", "change", "cloth", "coal", "color", "comfort", "committee", "company", "comparison", "competition", "condition", "connection", "control", "cook", "copper", "copy", "cork", "cotton", "cough", "country", "cover", "crack", "credit", "crime", "crush", "cry", "current", "curve", "damage", "danger", "daughter", "day", "death", "debt", "decision", "degree", "design", "desire", "destruction", "detail", "development", "digestion", "direction", "discovery", "discussion", "disease", "disgust", "distance", "distribution", "division", "doubt", "drink", "driving", "dust", "earth", "edge", "education", "effect", "end", "error", "event", "example", "exchange", "existence", "expansion", "experience", "expert", "fact", "fall", "family", "father", "fear", "feeling", "fiction", "field", "fight", "fire", "flame", "flight", "flower", "fold", "food", "force", "form", "friend", "front", "fruit"];
-
+export const GAME_TIME = 60;//
 
 export default (difficulty: Difficulty = Difficulty.Easy) => {
     const timeInterval = useTimeInterval(difficulty);
@@ -17,11 +17,14 @@ export default (difficulty: Difficulty = Difficulty.Easy) => {
     const [gameStopTime, setGameStoptTime] = useState<Date>()
     const [gameIsOn, setGameIsOn] = useState(false)
     const [currentWord, setCurrentWord] = useState('');
+    const [totalLetters, setTotalLetters] = useState(0);
     const [typeos, setTypeos] = useState(0);
     const [backspaces, setBackspaces] = useState(0);
     const [correctWords, setCorrectWords] = useState<{ [key: string]: boolean }>({});
+    const [usedWords, setUsedWords] = useState<{ [key: string]: boolean }>({});
 
 
+    const wordCount = useMemo(() => Object.keys(correctWords).length, [correctWords])
 
     const startGame = useCallback(() => {
         setGameStartTime(new Date())
@@ -43,6 +46,8 @@ export default (difficulty: Difficulty = Difficulty.Easy) => {
         if (gameIsOn) {
             const firstWord = availableWords.splice(0, 1)[0]
             setAvailableWords([...availableWords])
+            setUsedWords({ ...usedWords, [firstWord]: true })
+            setTotalLetters((totalLetters) => totalLetters + firstWord.length)
             setDisplayWords((displayWords) => [firstWord, ...displayWords.filter(word => !correctWords[word])])
         }
     }, [availableWords, gameIsOn, displayWords, correctWords])
@@ -62,7 +67,15 @@ export default (difficulty: Difficulty = Difficulty.Easy) => {
     }, [availableWords, timeInterval, displayWords, correctWords, gameIsOn])
 
 
-    const onChange: React.ChangeEventHandler<HTMLInputElement> = async ({ nativeEvent, target }) => {
+    const wordsPerMinute = useMemo(() => {
+        //@ts-ignore
+        const totalTime = Math.round(((gameStopTime || new Date()) - gameStartTime) / 1000) / GAME_TIME;
+        console.log('totalTime', totalTime, gameStopTime, gameStartTime)
+        const perMinute = isNaN(totalTime) || !totalTime ? 0 : wordCount / totalTime;
+        return Math.round(perMinute * 100) / 100
+    }, [wordCount, gameStartTime, gameStopTime])
+
+    const onInputChange: React.ChangeEventHandler<HTMLInputElement> = async ({ nativeEvent, target }) => {
         //@ts-ignore
         const inputType = nativeEvent.inputType as string;
         if (gameIsOn) {
@@ -89,10 +102,10 @@ export default (difficulty: Difficulty = Difficulty.Easy) => {
             }
         }
     }
-
+    // wordsPerMinute / wordCount
     return {
         displayWords,
-        onChange,
+        onInputChange,
         gameStartTime,
         gameStopTime,
         startGame,
@@ -100,9 +113,12 @@ export default (difficulty: Difficulty = Difficulty.Easy) => {
         gameIsOn,
         currentWord,
         statistics: {
+            wordsPerMinute,
             typeos,
             backspaces,
             correctWords: Object.keys(correctWords).length,
+            // score: Math.round((wordCount || 1 - typeos || 1) / (Object.keys(usedWords).length || 1) * 100) * (((wordCount - typeos - backspaces || 0) / (wordCount || 1))),
         }
     }
 }
+

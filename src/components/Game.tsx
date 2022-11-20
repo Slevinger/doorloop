@@ -1,33 +1,33 @@
 import { useMemo } from 'react';
-import useGame from '../hooks/useGame';
+import useGame, { GAME_TIME } from '../hooks/useGame';
 import { Difficulty } from '../types';
+import Statistics from './Statistics';
 import Timer from './Timer';
 
 
 
 
 export default ({ difficulty = Difficulty.Easy }: { difficulty?: Difficulty }) => {
-    const { startGame, stopGame, gameIsOn, currentWord, onChange, displayWords, statistics, gameStartTime, gameStopTime } = useGame(difficulty);
+    const { startGame, stopGame, gameIsOn, currentWord, onInputChange, displayWords, statistics } = useGame(difficulty);
 
 
-    const wordsPerMinute = useMemo(() => {
-        //@ts-ignore
-        const totalTime = Math.round((gameStopTime - gameStartTime) / 1000) / 60;
-        const perMinute = isNaN(totalTime) ? 0 : statistics.correctWords / totalTime;
-        return Math.round(perMinute * 100) / 100
-    }, [statistics, gameStartTime, gameStopTime])
 
-    console.log(wordsPerMinute)
+
     //@ts-ignore
-    const Statistics = <div>{Object.keys(statistics).map(key => <div>{`${key} => ${statistics[key] + ""}`}</div>)}</div>
-    return <div >
-        {Statistics}
-        <div>words per minute {wordsPerMinute}</div>
-        <div style={{ display: 'flex', width: '100%', justifyContent: 'center' }}>
+    return <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }} >
+        <Statistics values={statistics}
+            dictionary={{
+                'backspaces': "Back Spaces",
+                'typeos': 'Typeoes',
+                'correctWords': 'Correct Words',
+                'wordsPerMinute': 'Words Per Minute',
+                'score': "Score"
+            }} />
+        <div style={{ display: 'flex', width: '100%', justifyContent: 'center', margin: 20 }}>
             <button onClick={!gameIsOn ? startGame : stopGame}>{!gameIsOn ? 'Start Game' : 'Stop Game'}</button>
-            {gameIsOn && <Timer seconds={60} onTimerDone={() => stopGame()} />}
+            {gameIsOn && <Timer seconds={GAME_TIME} onTimerDone={() => stopGame()} />}
         </div>
-        <input type={"text"} value={currentWord} onChange={onChange} />
+        <input type={"text"} value={currentWord} onChange={onInputChange} />
         {displayWords.map((word) => <div key={word}>{word}</div>)}
 
     </div>
